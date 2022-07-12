@@ -22,8 +22,8 @@ type Operation =
 let commands : string list = ["push"; "pop"; "add"; "sub"; "mul"; "div"; "print"; "quit"]
 
 
-let readline : Operation = 
-   let input = let x = Console.In.ReadLine() in (x.Split[|' '|] |> List.ofArray) //push will also have an argument
+let readline (stream:System.IO.StreamReader) : Operation = 
+   let input = let x = stream.ReadLine() in (x.Split[|' '|] |> List.ofArray) //push will also have an argument
    match (List.tryFind ((=) input.[0]) commands) with 
     | None -> failwith $"{input} is not recognized as a valid command" 
     | Some c -> match c with
@@ -65,14 +65,15 @@ let div = let tryDivide x y = try Some (x / y) with | :? System.DivideByZeroExce
                                      | Some n -> (x/y)::stack
                                      | None -> failwith "can't divide by zero" 
 
-let print = (fun (stack:Stack) -> List.iter (printfn "%f") stack) 
+let print = (fun (stack:Stack) -> List.iter (printfn "%.1f") stack) 
 
 let quit () = (fun stack -> print stack; printfn "Quitting...") 
 
+let stream = new System.IO.StreamReader (System.Console.OpenStandardInput ())
 
 let rec repl () (stack:Stack) : unit =
-   printf "\n > " 
-   match readline with 
+   printf "\n> " 
+   match readline s with 
    | Push xs -> push stack xs |> repl () 
    | Pop p -> pop () stack |> repl ()
    | Add -> add stack |> repl ()
@@ -82,6 +83,9 @@ let rec repl () (stack:Stack) : unit =
    | Print -> print stack; repl () stack
    | Quit q -> quit () stack
 
+
+
 let stack = empty () 
 printfn "fsharp stackcalculator version 0.1"
+
 repl () stack 
