@@ -1,76 +1,87 @@
-namespace Stackcalculator
-
 open System 
+
+
+//superfluous
+type Commands = string list 
+
 
 type Stack = float list 
 
-module Parsing =
-
-   //superfluous
-   type Commands = string list 
-
-   type Operation =
-      | Push of float list
-      | Pop 
-      | Add 
-      | Sub
-      | Mul
-      | Div 
-      | Print
-     
-
-   // add more commands if needed 
-   let commands : Commands = ["push"; "pop"; "add"; "sub"; "mul"; "div"; "print"] 
+type Operation =
+   | Push of float list
+   | Pop of unit
+   | Add 
+   | Sub
+   | Mul
+   | Div 
+   | Print
+   | Quit of unit
 
 
-   let readline : Operation = 
-      let input = Console.In.ReadLine().Split[|' '|] |> List.ofArray in //push will also have an argument
-         match List.tryFind ((=) input.[0]) commands with 
-         | None -> failwith ${input} is not recognized as a valid command" 
-         | Some c -> match c with
-                     | "push" -> Push (input.[1..] |> List.map float)
-                     | "pop" -> Pop
-                     | "add" -> Add
-                     | "sub" -> Sub
-                     | "mul" -> Mul
-                     | "div" -> Div 
-                     | "print" -> Print 
+// add more commands if needed 
+let commands : string list = ["push"; "pop"; "add"; "sub"; "mul"; "div"; "print"; "quit"]
+
+
+let readline : Operation = 
+   let input = let x = Console.In.ReadLine() in (x.Split[|' '|] |> List.ofArray) //push will also have an argument
+   match (List.tryFind ((=) input.[0]) commands) with 
+    | None -> failwith $"{input} is not recognized as a valid command" 
+    | Some c -> match c with
+                 | "push" -> if List.length input = 1 then failwith "please provide some input" 
+                             else Push (input.[1..] |> List.map float)
+                 | "pop" -> Pop ()
+                 | "add" -> Add
+                 | "sub" -> Sub
+                 | "mul" -> Mul
+                 | "div" -> Div 
+                 | "print" -> Print 
+                 | "quit" -> Quit ()
 
 
 
-module Evaluation = 
-   open Parsing  
-      
-   let empty () : Stack = []
+let empty () : Stack = []
 
-   let push (stack : Stack) = (fun n -> n::Stack)
-   
-   let pop () = function | [] -> failwith "stack is empty" 
-                         | stack -> List.tail stack) 
+let push (stack : Stack) = (function | [] -> stack | xs -> xs@stack) 
 
-   let add = function | [] -> failwith "stack is empty" 
-                      | [s] -> [s]
-                      | x::y::stack -> (x+y)::stack 
-      
-   let sub = function | [] -> failwith "stack is empty" 
-                      | [s] -> [s]
-                      | x::y::stack -> (x-y)::stack   
+let pop () = function | [] -> failwith "stack is empty" 
+                      | stack -> List.tail stack
 
-   let mul = function | [] -> failwith "stack is empty" 
-                      | [s] -> [s]
-                      | x::y::stack -> (x*y)::stack   
-  
-   let mul = let tryDivide x y = try Some (x / y) with | :? System.DivideByZeroException -> None 
-             function | [] -> failwith "stack is empty" 
-                      | [s] -> [s]
-                      | x::y::stack -> match tryDivide x y with 
-                                       | Some n -> (x/y)::stack
-                                       | None -> failwith "can't divide by zero" 
+let add = function | [] -> failwith "stack is empty" 
+                   | [s] -> [s]
+                   | x::y::stack -> (x+y)::stack 
 
-   let print = (fun stack -> List.iter (fun n -> printfn "%f" n)) 
+let sub = function | [] -> failwith "stack is empty" 
+                   | [s] -> [s]
+                   | x::y::stack -> (x-y)::stack   
 
- 
-open Evaluation  
+let mul = function | [] -> failwith "stack is empty" 
+                   | [s] -> [s]
+                   | x::y::stack -> (x*y)::stack   
+
+let div = let tryDivide x y = try Some (x / y) with | :? System.DivideByZeroException -> None 
+          function | [] -> failwith "stack is empty" 
+                   | [s] -> [s]
+                   | x::y::stack -> match tryDivide x y with 
+                                     | Some n -> (x/y)::stack
+                                     | None -> failwith "can't divide by zero" 
+
+let print = (fun (stack:Stack) -> List.iter (printfn "%f") stack) 
+
+let quit () = (fun stack -> print stack; printfn "Quitting...") 
 
 
+let rec repl () (stack:Stack) : unit =
+   printf "\n > " 
+   match readline with 
+   | Push xs -> push stack xs |> repl () 
+   | Pop p -> pop () stack |> repl ()
+   | Add -> add stack |> repl ()
+   | Sub -> sub stack |> repl () 
+   | Mul -> mul stack |> repl ()
+   | Div -> div stack |> repl ()
+   | Print -> print stack; repl () stack
+   | Quit q -> quit () stack
 
+let stack = empty () 
+printfn "fsharp stackcalculator version 0.1"
+repl () stack 
