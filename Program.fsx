@@ -71,16 +71,16 @@ let quit () = (fun stack -> print stack; printfn "Quitting...")
 
 let stream = new System.IO.StreamReader (System.Console.OpenStandardInput ())
 
-let rec repl () (stack:Stack) : unit =
+let rec repl () (s: System.IO.StreamReader) (stack:Stack) : unit =
    printf "\n> " 
    match readline s with 
-   | Push xs -> push stack xs |> repl () 
-   | Pop p -> pop () stack |> repl ()
-   | Add -> add stack |> repl ()
-   | Sub -> sub stack |> repl () 
-   | Mul -> mul stack |> repl ()
-   | Div -> div stack |> repl ()
-   | Print -> print stack; repl () stack
+   | Push xs -> push stack xs |> repl () s
+   | Pop p -> pop () stack |> repl () s
+   | Add -> add stack |> repl () s
+   | Sub -> sub stack |> repl () s
+   | Mul -> mul stack |> repl () s
+   | Div -> div stack |> repl () s
+   | Print -> print stack; repl () s stack
    | Quit q -> quit () stack
 
 
@@ -88,4 +88,4 @@ let rec repl () (stack:Stack) : unit =
 let stack = empty () 
 printfn "fsharp stackcalculator version 0.1"
 
-repl () stack 
+repl () stream stack 
